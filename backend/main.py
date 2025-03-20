@@ -39,14 +39,15 @@ def wait_for_db():
             logging.info("Database is ready.")
             Base.metadata.create_all(bind=engine)
             logging.info("Database schema ensured.")
-    Base.metadata.create_all(bind=engine)
-    logging.info("Database schema ensured.")
-            return
+            Base.metadata.create_all(bind=engine)
+            logging.info("Database schema ensured.")
+
         except Exception as e:
             logging.warning(f"Waiting for database... ({retries} retries left)")
             time.sleep(3600)
             retries -= 1
-    raise Exception("Database not available.")
+    
+    raise RuntimeError("Database not available.")
 
 import requests
 
