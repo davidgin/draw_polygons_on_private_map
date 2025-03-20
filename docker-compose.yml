@@ -1,0 +1,32 @@
+
+services:
+  db:
+    volumes:
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    image: postgis/postgis
+    environment:
+      POSTGRES_DB: polygons
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+  backend:
+    build: ./backend
+    volumes:
+      - /home/eldan/osm:/osm
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/polygons
+    ports:
+      - '8080:8080'
+  frontend:
+    build: ./frontend
+    ports:
+      - '8081:80'
