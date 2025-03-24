@@ -1,32 +1,32 @@
+version: '3.8'
 
 services:
   db:
-    volumes:
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
-    image: postgis/postgis
+    build: ./db
+    container_name: postgis-db
     environment:
-      POSTGRES_DB: polygons
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d
+      - ./osm_data:/osm_data
     ports:
-      - '5432:5432'
+      - "5432:5432"
+
   backend:
     build: ./backend
+    container_name: polygon-backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
     volumes:
-      - /home/eldan/osm:/osm
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/docs"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+    ports:
+      - "8080:8000"
     depends_on:
       - db
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/polygons
-    ports:
-      - '8080:8080'
-  frontend:
-    build: ./frontend
-    ports:
-      - '8081:80'
+
+volumes:
+  postgis_data:

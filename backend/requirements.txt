@@ -1,9 +1,7 @@
-
 fastapi
-psycopg2-binary
-sqlalchemy
-pydantic
 uvicorn
+sqlalchemy[asyncio]
+asyncpg
+psycopg2
 geoalchemy2
 shapely
-osmnx

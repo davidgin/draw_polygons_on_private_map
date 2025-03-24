@@ -1,170 +1,95 @@
-
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from geoalchemy2 import Geometry
-from shapely import wkt
 import os
-import osmnx as ox
+import urllib.request
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy import update, delete
+from pydantic import BaseModel, Field
+from typing import Optional, List
+from shapely import wkt
+from .database import get_db
+from .models import PolygonModel
 
-DATABASE_URL = os.getenv('DATABASE_URL')
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-class Polygon(Base):
-    __tablename__ = 'polygons'
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    client_id = Column(String, default='0')
-    geom = Column(Geometry('POLYGON'))
-
-
-import time
-import logging
-
-logging.basicConfig(level=logging.INFO)
-
-def wait_for_db():
-    retries = 60
-    retries = 60
-    while retries > 0:
-        try:
-            db = SessionLocal()
-            db.execute('SELECT 1')
-            db.close()
-            logging.info("Database is ready.")
-            Base.metadata.create_all(bind=engine)
-            logging.info("Database schema ensured.")
-            Base.metadata.create_all(bind=engine)
-            logging.info("Database schema ensured.")
-
-        except Exception as e:
-            logging.warning(f"Waiting for database... ({retries} retries left)")
-            time.sleep(3600)
-            retries -= 1
-    
-    raise RuntimeError("Database not available.")
-
-import requests
-
-PLANET_PBF_URL = "https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf"
-PLANET_PBF_FILE = "/osm/planet-latest.osm.pbf"
-
-def download_planet_pbf():
-    if not os.access("/osm", os.W_OK):
-        logging.error("OSM directory /osm is not writable or not mounted!")
-        return
-    logging.info("OSM directory /osm is writable and mounted correctly.")
-    logging.info("Checking /osm directory...")
-
-    if not os.path.exists(PLANET_PBF_FILE):
-        logging.info("Starting the planet OSM PBF download...")
-        logging.info("Downloading the full planet OSM PBF file...")
-        with requests.get(PLANET_PBF_URL, stream=True) as r:
-            r.raise_for_status()
-            total_length = int(r.headers.get('content-length', 0))
-            downloaded = 0
-            with open(PLANET_PBF_FILE, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=16777216):
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    percent = (downloaded / total_length) * 100 if total_length else 0
-                    logging.info(f"Download progress: {percent:.2f}%")
-        logging.info("Planet OSM PBF file downloaded.")
+# 🌍 Download OSM file if not exists
+def download_osm_once():
+    osm_dir = "/osm_data"
+    osm_file = os.path.join(osm_dir, "planet-latest.osm.pbf")
+    osm_url = "https://planet.osm.org/pbf/planet-latest.osm.pbf"
+    os.makedirs(osm_dir, exist_ok=True)
+    if not os.path.exists(osm_file):
+        print("📥 Downloading OSM planet file...")
+        urllib.request.urlretrieve(osm_url, osm_file)
+        print("✅ OSM file downloaded.")
     else:
-        file_size = os.path.getsize(PLANET_PBF_FILE) / (1024 * 1024 * 1024)
-        logging.info(f"Planet OSM PBF file already exists. Size: {file_size:.2f} GB")
+        print("🗺️ OSM file already exists.")
 
+download_osm_once()
 
-def populate_osm():
-    db = SessionLocal()
-    if db.query(Polygon).first() is None:
-        logging.info("Populating database with OSM data...")
-        try:
-            gdf = ox.geometries_from_place('Manhattan, New York, USA', {'building': True})
-            for _, row in gdf.iterrows():
-                if row.geometry.geom_type == 'Polygon':
-                    db_polygon = Polygon(
-                        name=row.get('name', 'OSM Building'),
-                        geom=f'SRID=4326;{row.geometry.wkt}'
-                    )
-                    db.add(db_polygon)
-            db.commit()
-            logging.info("OSM data population completed.")
-        except Exception as e:
-            logging.error(f"Error populating OSM data: {e}")
-    else:
-        logging.info("Database already populated.")
-    db.close()
+app = FastAPI()
+app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
 
-class PolygonCreate(BaseModel):
-    name: str
-    wkt: str
-    client_id: str = '0'
+class PolygonRequest(BaseModel):
+    client_id: Optional[int] = None
+    name: str = Field(..., min_length=1)
+    wkt: str = Field(...)
 
 class PolygonResponse(BaseModel):
     id: int
+    client_id: int
     name: str
-    client_id: str
-    wkt: str
+    polygon: str
 
-    class Config:
-        orm_mode = True
-
-app = FastAPI()
-
-@app.on_event("startup")
-def startup_event():
-    wait_for_db()
-    download_planet_pbf()
-    populate_osm()
-
-@app.post("/polygons/", response_model=PolygonResponse)
-def create_polygon(polygon: PolygonCreate):
-    db = SessionLocal()
-    db_polygon = Polygon(
+@app.post("/api/polygons/save", response_model=PolygonResponse)
+async def save_polygon(polygon: PolygonRequest, db: AsyncSession = Depends(get_db)):
+    if not polygon.name.strip():
+        raise HTTPException(status_code=400, detail="Polygon name is required")
+    try:
+        wkt.loads(polygon.wkt)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid WKT: {e}")
+    obj = PolygonModel(
         name=polygon.name,
-        client_id=polygon.client_id,
-        geom=f'SRID=4326;{polygon.wkt}'
+        client_id=polygon.client_id or 0,
+        polygon=polygon.wkt,
     )
-    db.add(db_polygon)
-    db.commit()
-    db.refresh(db_polygon)
-    db.close()
-    return PolygonResponse(
-        id=db_polygon.id,
-        name=db_polygon.name,
-        client_id=db_polygon.client_id,
-        wkt=polygon.wkt
-    )
+    db.add(obj)
+    await db.commit()
+    await db.refresh(obj)
+    return obj
 
-@app.get("/polygons/", response_model=List[PolygonResponse])
-def read_polygons():
-    db = SessionLocal()
-    polygons = db.query(Polygon).all()
-    result = [
-        PolygonResponse(
-            id=p.id,
-            name=p.name,
-            client_id=p.client_id,
-            wkt=db.execute(p.geom.ST_AsText()).scalar()
-        ) for p in polygons
-    ]
-    db.close()
-    return result
+@app.get("/api/polygons/all", response_model=List[PolygonResponse])
+async def get_all(db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(PolygonModel))
+    return res.scalars().all()
 
-@app.delete("/polygons/{polygon_id}")
-def delete_polygon(polygon_id: int):
-    db = SessionLocal()
-    polygon = db.query(Polygon).get(polygon_id)
-    if not polygon:
-        db.close()
+@app.get("/api/polygons/client/{client_id}", response_model=List[PolygonResponse])
+async def get_by_client(client_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(PolygonModel).where(PolygonModel.client_id == client_id))
+    return res.scalars().all()
+
+@app.delete("/api/polygons/{polygon_id}")
+async def delete(polygon_id: int, db: AsyncSession = Depends(get_db)):
+    res = await db.execute(delete(PolygonModel).where(PolygonModel.id == polygon_id))
+    await db.commit()
+    if res.rowcount == 0:
         raise HTTPException(status_code=404, detail="Polygon not found")
-    db.delete(polygon)
-    db.commit()
-    db.close()
-    return {"detail": "Polygon deleted"}
+    return {"message": "Deleted"}
+
+@app.put("/api/polygons/{polygon_id}", response_model=PolygonResponse)
+async def update(polygon_id: int, polygon: PolygonRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        wkt.loads(polygon.wkt)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid WKT: {e}")
+    res = await db.execute(
+        update(PolygonModel)
+        .where(PolygonModel.id == polygon_id)
+        .values(name=polygon.name, client_id=polygon.client_id or 0, polygon=polygon.wkt)
+        .returning(PolygonModel)
+    )
+    obj = res.fetchone()
+    await db.commit()
+    if not obj:
+        raise HTTPException(status_code=404, detail="Polygon not found")
+    return obj
