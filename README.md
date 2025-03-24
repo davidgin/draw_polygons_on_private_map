@@ -18,7 +18,7 @@ e.g: wharehouses, private stops in private route. It can only be used with  gene
 
 ---
 
-## 📁 Project Structure 
+``` 📁 Project Structure 
  .
 ├── backend
 │   ├── database.py
@@ -37,7 +37,7 @@ e.g: wharehouses, private stops in private route. It can only be used with  gene
 │   └── 02-import-osm.sh
 ├── LICENSE
 └── README.md
-
+```
 ---
 
 ## ⚙️ Setup Instructions
