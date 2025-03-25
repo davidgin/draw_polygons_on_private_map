@@ -1,7 +1,7 @@
 # 🌍 Polygon Mapping App (FastAPI + PostGIS + Leaflet.js)
 
 This is a full-stack mapping application that allows users to draw polygons on an OpenStreetMap interface, assign them to a client ID, and store them in a spatial PostGIS database. The app inetends to availl the user to draw polygons on a map and store them in a database, with the ability to assign a client ID to each polygon.So that the polygons are associated with a client ID and can be queried later. 
-e.g: wharehouses, private stops in private route. It can only be used with  general polygons like ports, airports, etc.
+e.g: wharehouses, private stops in private route. It can also be used with  general polygons like ports, airports, etc.
 
 - ✅ Draw and save polygons
 - ✅ Assign client IDs and names
@@ -46,9 +46,10 @@ e.g: wharehouses, private stops in private route. It can only be used with  gene
 ```bash
     git clone https://github.com/yourname/polygon-mapping.git
     cd polygon-mapping
-``` 
-P
+
+
 2. **Create a `.env` file in the root directory:**
+   ```bash
     POSTGRES_DB=spatial_db
     POSTGRES_USER=user
     POSTGRES_PASSWORD=pass123
@@ -82,7 +83,7 @@ Access the API
     PUT /api/polygons/{id} — Update name/client/WKT
     DELETE /api/polygons/{id} — Delete polygon
 
-📡 
+```bash
 ## 1. Get All Polygons  
 **Endpoint:**  
 
@@ -114,6 +115,7 @@ POST /polygons/
 Description:
 Creates a new polygon in the database.
 
+''' json
 Request Body:
 
 {
@@ -223,3 +225,4 @@ Response Example:
   "coordinates": [[[longitude, latitude], [longitude, latitude], ...]]
 }
 
+```
