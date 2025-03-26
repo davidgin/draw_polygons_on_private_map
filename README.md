@@ -2,6 +2,8 @@
 
 This is a full-stack mapping application that allows users to draw polygons on an OpenStreetMap interface, assign them to a client ID, and store them in a spatial PostGIS database. The app inetends to availl the user to draw polygons on a map and store them in a database, with the ability to assign a client ID to each polygon.So that the polygons are associated with a client ID and can be queried later. 
 e.g: wharehouses, private stops in private route. It can also be used with  general polygons like ports, airports, etc.
+![izmir](https://github.com/user-attachments/assets/2a828405-dcdc-441f-96ed-5e738b2df249) cargo parking  polygon 
+
 
 - ✅ Draw and save polygons
 - ✅ Assign client IDs and names
