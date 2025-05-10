@@ -1,0 +1,35 @@
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+
+# Bytecode and venvs
+*.egg-info/
+*.egg
+.venv/
+env/
+venv/
+
+# Git & editor junk
+.git/
+.gitignore
+*.swp
+*.swo
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Tests and coverage
+.coverage
+coverage/
+htmlcov/
+
+# Poetry lock if not needed
+# poetry.lock
+
+# Docker ignore itself
+.dockerignore
