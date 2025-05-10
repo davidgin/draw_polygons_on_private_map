@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "polygon-mapping"
+version = "0.1.0"
+description = "Polygon drawing app with FastAPI, PostGIS, and Leaflet.js"
+authors = ["David"]
+license = "Apache-2.0"
+package-mode = false
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.110.0"
+uvicorn = { extras = ["standard"], version = "^0.29.0" }
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.28" }
+asyncpg = "^0.29.0"
+psycopg2-binary = "^2.9.9"
+geoalchemy2 = "^0.14.3"
+shapely = "^2.0.3"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.1.1"
+pytest-asyncio = "^0.23.6"
+httpx = "^0.27.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+

@@ -1,3 +1,6 @@
+--- # Project Setup: FastAPI + PostGIS + OSM (NYC for test, World for prod)
+
+-- The script initializes the database for the FastAPI application with PostGIS and OSM data.
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS postgis_topology;
 

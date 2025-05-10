@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-sqlalchemy[asyncio]
-asyncpg
-psycopg2
-geoalchemy2
-shapely

@@ -1,32 +1,21 @@
-version: '3.8'
 
 services:
-  db:
-    build: ./db
-    container_name: postgis-db
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  test_db:
+    build:
+      context: .
+      dockerfile: initdb/docker/test-postgis.Dockerfile
+    container_name: postgis-test-db
+    env_file: .env.test
     volumes:
-      - postgis_data:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d
       - ./osm_data:/osm_data
     ports:
-      - "5432:5432"
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  backend:
-    build: ./backend
-    container_name: polygon-backend
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-    volumes:
-      - ./backend:/app/backend
-      - ./frontend:/app/frontend
-    ports:
-      - "8080:8000"
-    depends_on:
-      - db
 
-volumes:
-  postgis_data:
+P

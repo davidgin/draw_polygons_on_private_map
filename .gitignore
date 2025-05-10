@@ -172,3 +172,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+docker-compose.yml.bak
+osm_data/new-york-latest.osm.pbf

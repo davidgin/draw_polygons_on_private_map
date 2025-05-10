@@ -1,19 +1,24 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
 import os
+import sys
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base
+from dotenv import load_dotenv
 
-# ⚠️ Don't provide a fallback for DATABASE_URL
-DATABASE_URL = os.getenv("DATABASE_URL")
+load_dotenv()
+# Use Postgres if set
+DATABASE_URL = os.environ["DATABASE_URL"]
 if not DATABASE_URL:
-    raise RuntimeError("❌ DATABASE_URL not set in environment. Please check your .env or docker-compose setup.")
+    raise ValueError("DATABASE_URL environment variable is not set")
 
-# ✅ Create async engine and session
-engine = create_async_engine(DATABASE_URL, future=True, echo=True)
+if "sqlite" in DATABASE_URL:
+    raise ValueError("DATABASE_URL Points to sqllite, which is not supported. Please use PostgreSQL with PostGIS for testing.")
+
+# SQLAlchemy engine and session setup
+engine = create_async_engine(DATABASE_URL, future=True, echo=False)
 SessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
 
-# Dependency for FastAPI routes
 async def get_db():
     async with SessionLocal() as session:
         yield session
-

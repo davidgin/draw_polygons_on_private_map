@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  # PostGIS database service
+  db:
+    image: postgis/postgis:latest
+    container_name: postgis_db
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "test", "-d", "test_db"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d  # Optional: initialize DB from SQL scripts
+
+  # Test runner service
+  test-runner:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile  # Ensure this is the correct path to your Dockerfile
+    container_name: test-runner
+    entrypoint: ["/wait-for-it.sh", "db:5432", "--timeout=60", "--strict", "--", "pytest"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://test:test@db:5432/test_db  # Ensure this matches your DB setup
+    depends_on:
+      - db  # Ensure that test-runner depends on db
+    volumes:
+      - ./backend:/app/backend  # Mount the backend code into the container
+      - ./tests:/app/tests  # Mount the tests directory
+      - ./wait-for-it.sh:/wait-for-it.sh  # Ensure it's available inside the container
+    working_dir: /app/tests  # Set the working directory to where the tests are located

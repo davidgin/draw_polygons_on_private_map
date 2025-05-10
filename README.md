@@ -20,7 +20,8 @@ e.g: wharehouses, private stops in private route. It can also be used with  gene
 
 ---
 
-``` 📁 Project Structure 
+## 📁 Project Structure
+
  .
 ├── backend
 │   ├── database.py
@@ -39,33 +40,71 @@ e.g: wharehouses, private stops in private route. It can also be used with  gene
 │   └── 02-import-osm.sh
 ├── LICENSE
 └── README.md
-```
+
 ---
 
 ## ⚙️ Setup Instructions
 
 1. **Clone the repository:**
+
 ```bash
-    git clone https://github.com/yourname/polygon-mapping.git
+    git clone https://github.com/davidgin/polygon-mapping.git
     cd polygon-mapping
+```bash
 
-
+P
 2. **Create a `.env` file in the root directory:**
-   ```bash
     POSTGRES_DB=spatial_db
     POSTGRES_USER=user
     POSTGRES_PASSWORD=pass123
     DATABASE_URL=postgresql+asyncpg://user:pass123@db/spatial_db
 
+```bash
+  # Start the services using Docker Compose
+  docker-compose up --build -d
+```bash
+
+1. **Start the services:**
+
+Run the following command to start the services using Docker Compose:
+
+```bash
+docker-compose up --build -d
+```bash
+
+This will:
+
+- Download and import the full OSM world map.
+- Initialize PostGIS and the polygon table.
+- Serve the frontend on [http://localhost:8080](http://localhost:8080).
+
+```markdown
+## 🛠️ Development Notes
+
+### Key Features:
+- **Interactive Mapping**: Users can draw polygons directly on the map interface.
+- **Client Association**: Each polygon can be assigned to a specific client ID for easy management.
+- **Spatial Database**: Polygons are stored as `geometry(POLYGON, 4326)` in a PostGIS-enabled PostgreSQL database.
+- **REST API**: Full CRUD operations are available for managing polygons and their associations.
+- **Frontend-Backend Integration**: The application is served via FastAPI, with a responsive frontend powered by Leaflet.js.
+- **Dockerized Setup**: The entire application is containerized for easy deployment and scalability.
+
+### Additional Notes:
+- The application automatically reloads the frontend every 30 seconds to reflect changes.
+- Ensure that the `.env` file is correctly configured before starting the services.
+- The OSM world map import is optional if the database is already populated.
+
 ```
-3. **Start the services:**
-```
+
    docker-compose up -d--build
    Downloads and imports the full OSM world map
    Initializes PostGIS and polygon table
-   Serves the frontend on http://localhost:8080
+   Serves the frontend on <http://localhost:8080>
+
 ```
+
 ## 🚀 Usage
+
  Access the App
 
     Visit: http://localhost:8080
@@ -85,8 +124,10 @@ Access the API
     PUT /api/polygons/{id} — Update name/client/WKT
     DELETE /api/polygons/{id} — Delete polygon
 
-```bash
+📡
+
 ## 1. Get All Polygons  
+
 **Endpoint:**  
 
 GET /polygons/
@@ -95,9 +136,11 @@ GET /polygons/
 Returns a list of all polygons filtered by `client_id`.  
 
 **Query Parameters:**  
+
 - `client_id` (UUID, required) - The client ID to filter polygons.  
 
 **Response Example:**  
+
 ```json
 [
   {
@@ -117,7 +160,6 @@ POST /polygons/
 Description:
 Creates a new polygon in the database.
 
-''' json
 Request Body:
 
 {
@@ -227,4 +269,3 @@ Response Example:
   "coordinates": [[[longitude, latitude], [longitude, latitude], ...]]
 }
 
-```
