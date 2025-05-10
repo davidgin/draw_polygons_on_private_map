@@ -22,7 +22,7 @@ e.g: wharehouses, private stops in private route. It can also be used with  gene
 
 ## 📁 Project Structure
 
- .
+``` .
 ├── backend
 │   ├── database.py
 │   ├── DOCKEFILE
@@ -42,6 +42,7 @@ e.g: wharehouses, private stops in private route. It can also be used with  gene
 └── README.md
 
 ---
+```
 
 ## ⚙️ Setup Instructions
 
