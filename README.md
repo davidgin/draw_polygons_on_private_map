@@ -4,7 +4,6 @@ This is a full-stack mapping application that allows users to draw polygons on a
 e.g: wharehouses, private stops in private route. It can also be used with  general polygons like ports, airports, etc.
 ![izmir](https://github.com/user-attachments/assets/2a828405-dcdc-441f-96ed-5e738b2df249) cargo parking  polygon 
 
-
 - ✅ Draw and save polygons
 - ✅ Assign client IDs and names
 - ✅ Store polygons as `geometry(POLYGON, 4326)` in PostgreSQL
